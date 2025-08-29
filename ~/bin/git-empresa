@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo "🏢 Configurando Git para EMPRESA (MercadoLivre)..."
+
+# Configuração global para empresa
+git config --global user.name "jose araujo"
+git config --global user.email "jose.aaraujo@mercadolivre.com"
+
+# Configuração de URL para repositórios da empresa
+git config --global url."git@github.com:mercadolibre/".insteadOf "https://github.com/mercadolibre/"
+git config --global url."git@github.com-emu:melisource/".insteadOf "https://github.com/melisource/"
+git config --global url."git@github.com-emu:melisource/".insteadOf "git@github.com:melisource/"
+
+echo "✅ Git configurado para EMPRESA!"
+echo "📧 Email: jose.aaraujo@mercadolivre.com"
+echo "🔑 SSH: Usando chaves da empresa"
+
+# Mostrar configuração atual
+echo ""
+echo "📋 Configuração atual:"
+git config --global --get user.name
+git config --global --get user.email
