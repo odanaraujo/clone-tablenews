@@ -1,0 +1,9 @@
+# quando abrir um arquivo para editar, ele procura o editorconfig na pasta
+# se não achar, ele sobe novamente. Até achar o root = true
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+
+  
