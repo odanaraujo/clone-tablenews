@@ -33,6 +33,17 @@ OnlyDans é um site de notícias que mostra as notícias mais importantes do dia
 - ✅ **Design responsivo** que funciona em mobile e desktop
 - ✅ **Cache inteligente** para otimização de performance
 - ✅ **Error boundaries** para recuperação de falhas
+- ✅ **Google Analytics** completo com eventos customizados
+
+### 📊 **Analytics e Rastreamento**
+- ✅ **Google Analytics 4** integrado (ID: G-620LEXVFHC)
+- ✅ **Eventos customizados** rastreados:
+  - 📂 Mudança de categoria de notícias
+  - 🖱️ Cliques em títulos de notícias
+  - 📖 Cliques em "Ler mais"
+  - 🌙 Toggle dark/light mode
+- ✅ **Métricas de engajamento** para análise de comportamento
+- ✅ **Fontes mais acessadas** para otimização de conteúdo
 
 ## 🚀 Como Executar
 
