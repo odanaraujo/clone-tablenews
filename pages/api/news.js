@@ -1,6 +1,11 @@
 // GNews API Configuration
-const GNEWS_API_KEY = '8c34d987f002aca02aad2daf5811b9bd';
+const GNEWS_API_KEY = process.env.GNEWS_API_KEY;
 const GNEWS_BASE_URL = 'https://gnews.io/api/v4';
+
+// Validar se API key está configurada
+if (!GNEWS_API_KEY) {
+  console.error('❌ ERRO: GNEWS_API_KEY não está configurada no .env.local');
+}
 
 // Configurações de queries da GNews por categoria
 const GNEWS_QUERIES = {
@@ -328,6 +333,6 @@ export default async function handler(req, res) {
       error: error.message,
       fetchedAt: new Date().toISOString(),
       apiUsage: `${requestCount.count} requests today`
-    });
+    });bot
   }
 }
