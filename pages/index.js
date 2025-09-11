@@ -70,12 +70,30 @@ function Home() {
   const { news, loading, error, refetch, lastFetch } = useNews(currentCategory, sortBy);
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    
+    // Google Analytics - Rastrear mudança de tema
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'theme_toggle', {
+        event_category: 'ui_interaction',
+        event_label: newMode ? 'dark' : 'light'
+      });
+    }
   };
 
   const handleCategoryChange = (category) => {
     setCurrentCategory(category);
     setMobileMenuOpen(false); // Fechar menu mobile ao selecionar categoria
+    
+    // Google Analytics - Rastrear mudança de categoria
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'category_change', {
+        event_category: 'navigation',
+        event_label: category,
+        custom_parameter: CATEGORIES[category]?.label
+      });
+    }
   };
 
   const formatLastUpdate = (date) => {
@@ -94,6 +112,19 @@ function Home() {
   return (
     <>
       <Head>
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-620LEXVFHC"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-620LEXVFHC');
+            `,
+          }}
+        />
+        
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>OnlyDans - Top Stories</title>
@@ -331,6 +362,16 @@ function Home() {
                               href={article.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={() => {
+                                // Google Analytics - Rastrear cliques em notícias
+                                if (typeof gtag !== 'undefined') {
+                                  gtag('event', 'news_click', {
+                                    event_category: 'engagement',
+                                    event_label: article.source,
+                                    custom_parameter: currentCategory
+                                  });
+                                }
+                              }}
                             >
                               <h3 className="text-xl font-semibold text-slate-900 group-hover:text-primary dark:text-white dark:group-hover:text-primary">
                                 {article.title}
@@ -345,6 +386,16 @@ function Home() {
                                 href={article.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() => {
+                                  // Google Analytics - Rastrear cliques em "Ler mais"
+                                  if (typeof gtag !== 'undefined') {
+                                    gtag('event', 'read_more_click', {
+                                      event_category: 'engagement',
+                                      event_label: article.source,
+                                      custom_parameter: currentCategory
+                                    });
+                                  }
+                                }}
                               >
                                 Ler mais em {article.source}
                               </a>
