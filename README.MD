@@ -45,6 +45,14 @@ OnlyDans é um site de notícias que mostra as notícias mais importantes do dia
 - ✅ **Métricas de engajamento** para análise de comportamento
 - ✅ **Fontes mais acessadas** para otimização de conteúdo
 
+### 💰 **Monetização**
+- ✅ **Google AdSense** integrado (ID: ca-pub-7415807447932383)
+- ✅ **Script otimizado** para não afetar performance
+- ✅ **Carregamento assíncrono** dos anúncios
+- ✅ **Configuração de segurança** com crossOrigin
+- ⏳ **Aguardando aprovação** do Google AdSense
+- 🎯 **Pronto para exibir anúncios** após aprovação
+
 ## 🚀 Como Executar
 
 ```bash
