@@ -64,18 +64,46 @@ function cleanText(text) {
   // Remove CDATA
   text = text.replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1');
   
-  // Remove HTML tags
-  text = text.replace(/<[^>]*>/g, '');
+  // Remove HTML tags mas preserva espaços
+  text = text.replace(/<[^>]*>/g, ' ');
   
-  // Decodifica entidades HTML básicas
+  // Tratar sequências específicas do Google News que causam palavras juntas
+  // Foco apenas em padrões conhecidos de fontes de notícias brasileiras
   text = text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/([A-Za-zÀ-ÿ0-9])&nbsp;&nbsp;([A-ZÀ-Ÿ])/g, '$1. $2')  // Separador específico do Google News
+    // Padrões específicos de fontes conhecidas
+    .replace(/(Estadão|UOL|G1|Globo|Folha)([A-Z][a-z]{3,})/g, '$1. $2')  // Ex: "EstadãoFux", "G1Luiz"
+    .replace(/(CNN|BBC)([A-Z][a-z]{3,})/g, '$1 $2')                      // Ex: "CNNBrasil"
+    .replace(/([a-z]+)([0-9]{3})([A-Z][a-z]{3,})/g, '$1 $2. $3')         // Ex: "Poder360Fux"
+    .replace(/(\d)(G1|UOL|CNN|BBC|Globo)/g, '$1. $2');                   // Ex: "360G1"
   
-  return text.trim();
+  // Decodifica entidades HTML comuns
+  text = text
+    .replace(/&nbsp;/g, ' ')           // Non-breaking space
+    .replace(/&amp;/g, '&')           // Ampersand
+    .replace(/&lt;/g, '<')            // Less than
+    .replace(/&gt;/g, '>')            // Greater than
+    .replace(/&quot;/g, '"')          // Double quote
+    .replace(/&#39;/g, "'")           // Single quote
+    .replace(/&apos;/g, "'")          // Apostrophe
+    .replace(/&hellip;/g, '...')      // Ellipsis
+    .replace(/&mdash;/g, '—')         // Em dash
+    .replace(/&ndash;/g, '–')         // En dash
+    .replace(/&rsquo;/g, "'")         // Right single quote
+    .replace(/&lsquo;/g, "'")         // Left single quote
+    .replace(/&rdquo;/g, '"')         // Right double quote
+    .replace(/&ldquo;/g, '"')         // Left double quote
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))  // Numeric entities
+    .replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16))); // Hex entities
+  
+  // Limpeza final de espaços
+  text = text
+    .replace(/\s+/g, ' ')             // Multiple spaces to single space
+    .replace(/\.\s*\./g, '.')         // Remove pontos duplos
+    .replace(/\n\s*\n/g, '\n')        // Multiple line breaks
+    .trim();
+  
+  return text;
 }
 
 // Função para extrair domínio da fonte
@@ -190,7 +218,7 @@ async function fetchNews(category = 'home', limit = 20) {
     // Retornar cache antigo em caso de erro, se existir
     if (newsCache[cacheKey]) {
       console.log('Returning cached data due to error');
-      return newsCache[cacheKey].data;
+      return newsCache[cacheKey] .data;
     }
     
     throw new Error(`Falha ao buscar notícias: ${error.message}`);
