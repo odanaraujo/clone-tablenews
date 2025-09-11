@@ -135,8 +135,8 @@ function Home() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>OnlyDans - As Notícias Mais Importantes do Brasil</title>
-        <meta name="description" content="Descubra as notícias mais importantes do Brasil em um só lugar. Resumos rápidos, fontes confiáveis e atualizações em tempo real sobre política, economia, tecnologia e esportes." />
-        <meta name="keywords" content="notícias brasil, notícias importantes, resumo notícias, política brasil, economia brasil, tecnologia, esportes, notícias em tempo real" />
+        <meta name="description" content="OnlyDans: Criado pelo programador Dan. Como OnlyFans, mas só notícias! Descubra as notícias mais importantes do Brasil curadas por um dev. Resumos rápidos, sem enrolação." />
+        <meta name="keywords" content="onlydans, only dans, dan programador, garoto de programa, notícias brasil, notícias importantes, resumo notícias, política brasil, economia brasil, tecnologia, esportes, notícias curadas, programador notícias" />
         <meta name="author" content="OnlyDans" />
         <meta name="robots" content="index, follow" />
         <meta name="language" content="pt-BR" />
