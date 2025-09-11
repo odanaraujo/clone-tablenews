@@ -1,31 +1,55 @@
-import { XMLParser } from 'fast-xml-parser';
+// GNews API Configuration
+const GNEWS_API_KEY = '8c34d987f002aca02aad2daf5811b9bd';
+const GNEWS_BASE_URL = 'https://gnews.io/api/v4';
 
-// Configurações dos feeds RSS do Google News por categoria
-const RSS_FEEDS = {
-  home: 'https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  world: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  politics: 'https://news.google.com/rss/search?q=pol%C3%ADtica+Brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  business: 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  tech: 'https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  science: 'https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=pt-BR&gl=BR&ceid=BR:pt-419',
-  sports: 'https://news.google.com/rss/headlines/section/topic/SPORTS?hl=pt-BR&gl=BR&ceid=BR:pt-419'
+// Configurações de queries da GNews por categoria
+const GNEWS_QUERIES = {
+  home: {
+    endpoint: 'top-headlines',
+    params: 'category=general&lang=pt&country=br&nullable=image'
+  },
+  world: {
+    endpoint: 'top-headlines', 
+    params: 'category=world&lang=pt&country=br&nullable=image'
+  },
+  politics: {
+    endpoint: 'search',
+    params: 'q=política OR governo OR eleição OR congresso OR ministério&lang=pt&country=br&nullable=image&sortby=publishedAt'
+  },
+  business: {
+    endpoint: 'top-headlines',
+    params: 'category=business&lang=pt&country=br&nullable=image'
+  },
+  tech: {
+    endpoint: 'top-headlines',
+    params: 'category=technology&lang=pt&country=br&nullable=image'
+  },
+  science: {
+    endpoint: 'top-headlines',
+    params: 'category=science&lang=pt&country=br&nullable=image'
+  },
+  sports: {
+    endpoint: 'top-headlines',
+    params: 'category=sports&lang=pt&country=br&nullable=image'
+  }
 };
 
 // Cache simples em memória (em produção, usar Redis ou similar)
 let newsCache = {};
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hora em milissegundos
 
-// Parser XML otimizado
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: '',
-  textNodeName: 'text',
-  parseNodeValue: true,
-  parseAttributeValue: true,
-  trimValues: true,
-  ignoreNameSpace: false,
-  alwaysCreateTextNode: false
-});
+// Cache otimizado para GNews (limite não especificado, mas vamos ser conservadores)
+const CACHE_DURATIONS = {
+  home: 2 * 60 * 60 * 1000,      // 2 horas (categoria mais popular)
+  world: 4 * 60 * 60 * 1000,     // 4 horas  
+  politics: 2 * 60 * 60 * 1000,  // 2 horas (notícias quentes)
+  business: 4 * 60 * 60 * 1000,  // 4 horas
+  tech: 6 * 60 * 60 * 1000,      // 6 horas
+  science: 8 * 60 * 60 * 1000,   // 8 horas (menos urgente)
+  sports: 3 * 60 * 60 * 1000     // 3 horas (resultados frequentes)
+};
+
+// Contador de requests para monitorar uso da API
+let requestCount = { count: 0, date: new Date().toDateString() };
 
 // Função para calcular score de relevância baseado em palavras-chave importantes
 function calculateRelevance(title, description) {
@@ -50,10 +74,6 @@ function calculateRelevance(title, description) {
     if (text.includes(keyword)) score += 5;
   });
   
-  // Bonus para notícias recentes (últimas 6 horas)
-  const now = new Date();
-  const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-  
   return Math.min(100, Math.max(1, score));
 }
 
@@ -61,46 +81,41 @@ function calculateRelevance(title, description) {
 function cleanText(text) {
   if (!text) return '';
   
-  // Remove CDATA
-  text = text.replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1');
-  
   // Remove HTML tags mas preserva espaços
   text = text.replace(/<[^>]*>/g, ' ');
   
-  // Tratar sequências específicas do Google News que causam palavras juntas
-  // Foco apenas em padrões conhecidos de fontes de notícias brasileiras
+  // Tratar sequências específicas que causam palavras juntas
   text = text
-    .replace(/([A-Za-zÀ-ÿ0-9])&nbsp;&nbsp;([A-ZÀ-Ÿ])/g, '$1. $2')  // Separador específico do Google News
-    // Padrões específicos de fontes conhecidas
-    .replace(/(Estadão|UOL|G1|Globo|Folha)([A-Z][a-z]{3,})/g, '$1. $2')  // Ex: "EstadãoFux", "G1Luiz"
-    .replace(/(CNN|BBC)([A-Z][a-z]{3,})/g, '$1 $2')                      // Ex: "CNNBrasil"
-    .replace(/([a-z]+)([0-9]{3})([A-Z][a-z]{3,})/g, '$1 $2. $3')         // Ex: "Poder360Fux"
-    .replace(/(\d)(G1|UOL|CNN|BBC|Globo)/g, '$1. $2');                   // Ex: "360G1"
+    .replace(/([A-Za-zÀ-ÿ0-9])&nbsp;&nbsp;([A-ZÀ-Ÿ])/g, '$1. $2')
+    .replace(/(Estadão|UOL|G1|Globo|Folha)([A-Z][a-z]{3,})/g, '$1. $2')
+    .replace(/(CNN|BBC)([A-Z][a-z]{3,})/g, '$1 $2')
+    .replace(/([a-z]+)([0-9]{3})([A-Z][a-z]{3,})/g, '$1 $2. $3')
+    .replace(/(\d)(G1|UOL|CNN|BBC|Globo)/g, '$1. $2');
   
   // Decodifica entidades HTML comuns
   text = text
-    .replace(/&nbsp;/g, ' ')           // Non-breaking space
-    .replace(/&amp;/g, '&')           // Ampersand
-    .replace(/&lt;/g, '<')            // Less than
-    .replace(/&gt;/g, '>')            // Greater than
-    .replace(/&quot;/g, '"')          // Double quote
-    .replace(/&#39;/g, "'")           // Single quote
-    .replace(/&apos;/g, "'")          // Apostrophe
-    .replace(/&hellip;/g, '...')      // Ellipsis
-    .replace(/&mdash;/g, '—')         // Em dash
-    .replace(/&ndash;/g, '–')         // En dash
-    .replace(/&rsquo;/g, "'")         // Right single quote
-    .replace(/&lsquo;/g, "'")         // Left single quote
-    .replace(/&rdquo;/g, '"')         // Right double quote
-    .replace(/&ldquo;/g, '"')         // Left double quote
-    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))  // Numeric entities
-    .replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16))); // Hex entities
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&hellip;/g, '...')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+    .replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
   
   // Limpeza final de espaços
   text = text
-    .replace(/\s+/g, ' ')             // Multiple spaces to single space
-    .replace(/\.\s*\./g, '.')         // Remove pontos duplos
-    .replace(/\n\s*\n/g, '\n')        // Multiple line breaks
+    .replace(/\s+/g, ' ')
+    .replace(/\.\s*\./g, '.')
+    .replace(/\n\s*\n/g, '\n')
     .trim();
   
   return text;
@@ -117,61 +132,96 @@ function extractDomain(url) {
   }
 }
 
-// Função para processar item RSS em formato JSON
-function processRSSItem(item, index) {
-  const title = cleanText(item.title || '');
-  const description = cleanText(item.description || '');
-  const link = item.link || '';
-  const pubDate = item.pubDate || item.published || '';
+// Função para monitorar uso de requests da API
+function trackAPIRequest() {
+  const today = new Date().toDateString();
   
-  // Extrair informações da fonte
-  const source = item.source || {};
-  const sourceName = cleanText(source.text || extractDomain(link));
-  const sourceUrl = source.url || link;
+  if (requestCount.date !== today) {
+    requestCount = { count: 1, date: today };
+  } else {
+    requestCount.count++;
+  }
+  
+  console.log(`GNews Request #${requestCount.count} today`);
+  
+  if (requestCount.count >= 90) {
+    console.warn('⚠️ High number of GNews requests today!');
+  }
+  
+  return requestCount;
+}
+
+// Função para processar artigo da GNews em formato JSON
+function processGNewsArticle(article, index) {
+  const title = cleanText(article.title || '');
+  const description = cleanText(article.description || '');
+  
+  // Usar description para summary
+  let summary = description;
+  if (summary) {
+    summary = summary.substring(0, 300) + (summary.length > 300 ? '...' : '');
+  }
+  
+  // Extrair informações da fonte (GNews tem estrutura source.name)
+  const sourceName = article.source?.name || extractDomain(article.url) || 'Fonte Desconhecida';
+  const sourceUrl = article.source?.url || article.url || '';
   
   // Calcular relevância
-  const relevance = calculateRelevance(title, description);
+  const relevance = calculateRelevance(title, summary);
   
   // Processar data de publicação
   let publishedAt = new Date();
-  if (pubDate) {
+  if (article.publishedAt) {
     try {
-      publishedAt = new Date(pubDate);
+      publishedAt = new Date(article.publishedAt);
     } catch {
       publishedAt = new Date();
     }
   }
   
+  // Imagem da GNews (com nullable=image deve sempre ter!)
+  const imageUrl = article.image || null;
+  
   return {
-    id: index + 1,
+    id: article.id || `${index + 1}`,
     title,
-    summary: description.substring(0, 300) + (description.length > 300 ? '...' : ''),
-    url: link,
-    source: sourceName || 'Fonte Desconhecida',
+    summary: summary || 'Resumo não disponível.',
+    url: article.url || '',
+    source: sourceName,
     sourceUrl,
     publishedAt: publishedAt.toISOString(),
     relevance,
-    timestamp: publishedAt
+    timestamp: publishedAt,
+    imageUrl,
+    author: null, // GNews não retorna author no resultado base
+    originalId: article.id // ID original da GNews
   };
 }
 
-// Função principal para buscar e processar notícias
+// Função principal para buscar e processar notícias da GNews
 async function fetchNews(category = 'home', limit = 20) {
   const cacheKey = `${category}_${limit}`;
+  const cacheDuration = CACHE_DURATIONS[category] || CACHE_DURATIONS.home;
   
   // Verificar cache
   if (newsCache[cacheKey] && 
-      (Date.now() - newsCache[cacheKey].fetchedAt) < CACHE_DURATION) {
+      (Date.now() - newsCache[cacheKey].fetchedAt) < cacheDuration) {
+    console.log(`Cache hit for ${category}`);
     return newsCache[cacheKey].data;
   }
   
   try {
-    const rssUrl = RSS_FEEDS[category] || RSS_FEEDS.home;
+    const queryConfig = GNEWS_QUERIES[category] || GNEWS_QUERIES.home;
+    const url = `${GNEWS_BASE_URL}/${queryConfig.endpoint}?${queryConfig.params}&max=${Math.min(limit, 100)}&apikey=${GNEWS_API_KEY}`;
     
-    console.log(`Fetching news from: ${rssUrl}`);
+    console.log(`Fetching news from GNews: ${category}`);
+    console.log(`URL: ${url}`);
     
-    // Buscar RSS feed
-    const response = await fetch(rssUrl, {
+    // Monitorar uso da API
+    trackAPIRequest();
+    
+    // Buscar da GNews
+    const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; OnlyDans/1.0; +https://onlydans.vercel.app)'
       }
@@ -181,44 +231,40 @@ async function fetchNews(category = 'home', limit = 20) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
-    const xmlData = await response.text();
+    const data = await response.json();
     
-    // Parse XML
-    const parsed = parser.parse(xmlData);
-    
-    // Extrair items do RSS
-    const rss = parsed.rss || parsed;
-    const channel = rss.channel || rss;
-    let items = channel.item || channel.items || [];
-    
-    // Garantir que items é um array
-    if (!Array.isArray(items)) {
-      items = [items];
+    if (data.error) {
+      throw new Error(`GNews error: ${data.error || 'Unknown error'}`);
     }
     
-    // Processar items
-    const news = items
+    const articles = data.articles || [];
+    
+    // Processar artigos
+    const news = articles
       .slice(0, limit)
-      .map((item, index) => processRSSItem(item, index))
+      .map((article, index) => processGNewsArticle(article, index))
       .filter(item => item.title && item.title.length > 10); // Filtrar títulos muito curtos
     
     // Salvar no cache
     newsCache[cacheKey] = {
       data: news,
-      fetchedAt: Date.now()
+      fetchedAt: Date.now(),
+      totalArticles: data.totalArticles || articles.length
     };
     
     console.log(`Successfully processed ${news.length} news items for category: ${category}`);
+    console.log(`Total articles available: ${data.totalArticles || 'unknown'}`);
+    console.log(`GNews requests today: ${requestCount.count}`);
     
     return news;
     
   } catch (error) {
-    console.error('Error fetching news:', error);
+    console.error('Error fetching news from GNews:', error);
     
     // Retornar cache antigo em caso de erro, se existir
     if (newsCache[cacheKey]) {
       console.log('Returning cached data due to error');
-      return newsCache[cacheKey] .data;
+      return newsCache[cacheKey].data;
     }
     
     throw new Error(`Falha ao buscar notícias: ${error.message}`);
@@ -236,7 +282,7 @@ export default async function handler(req, res) {
     const { category = 'home', limit = 20, sort = 'recent' } = req.query;
     
     // Validar categoria
-    if (!RSS_FEEDS[category]) {
+    if (!GNEWS_QUERIES[category]) {
       return res.status(400).json({ error: 'Categoria inválida' });
     }
     
@@ -264,7 +310,8 @@ export default async function handler(req, res) {
       total: news.length,
       data: news,
       cached: newsCache[`${category}_${newsLimit}`]?.fetchedAt ? true : false,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
+      apiUsage: `${requestCount.count} requests today`
     });
     
   } catch (error) {
@@ -273,7 +320,8 @@ export default async function handler(req, res) {
     res.status(500).json({
       success: false,
       error: error.message,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
+      apiUsage: `${requestCount.count} requests today`
     });
   }
 }
