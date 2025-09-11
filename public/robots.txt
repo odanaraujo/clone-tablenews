@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://onlydans.com.br/sitemap.xml
+
+# Crawl-delay for bots (seconds)
+Crawl-delay: 1
+
+# Disallow admin/sensitive areas (if any)
+# Disallow: /admin/
+# Disallow: /api/
+
+# Allow specific important pages
+Allow: /
+Allow: /api/news
+
+# Host
+Host: https://onlydans.com.br

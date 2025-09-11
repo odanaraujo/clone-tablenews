@@ -134,13 +134,54 @@ function Home() {
         
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>OnlyDans - Top Stories</title>
-        <meta name="description" content="The most important news of the day, with short summaries and reference links." />
+        <title>OnlyDans - As Notícias Mais Importantes do Brasil</title>
+        <meta name="description" content="Descubra as notícias mais importantes do Brasil em um só lugar. Resumos rápidos, fontes confiáveis e atualizações em tempo real sobre política, economia, tecnologia e esportes." />
+        <meta name="keywords" content="notícias brasil, notícias importantes, resumo notícias, política brasil, economia brasil, tecnologia, esportes, notícias em tempo real" />
+        <meta name="author" content="OnlyDans" />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="pt-BR" />
+        <link rel="canonical" href="https://onlydans.com.br" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://onlydans.com.br" />
+        <meta property="og:title" content="OnlyDans - As Notícias Mais Importantes do Brasil" />
+        <meta property="og:description" content="Descubra as notícias mais importantes do Brasil em um só lugar. Resumos rápidos, fontes confiáveis e atualizações em tempo real." />
+        <meta property="og:image" content="https://onlydans.com.br/images/logos/OnlyDans-Logo-Design-3.jpg" />
+        <meta property="og:site_name" content="OnlyDans" />
+        <meta property="og:locale" content="pt_BR" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://onlydans.com.br" />
+        <meta name="twitter:title" content="OnlyDans - As Notícias Mais Importantes do Brasil" />
+        <meta name="twitter:description" content="Descubra as notícias mais importantes do Brasil em um só lugar. Resumos rápidos, fontes confiáveis e atualizações em tempo real." />
+        <meta name="twitter:image" content="https://onlydans.com.br/images/logos/OnlyDans-Logo-Design-3.jpg" />
         
         {/* Favicon */}
         <link rel="icon" href="/images/logos/OnlyDans-Favicon-Light.jpg" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/images/logos/OnlyDans-Favicon-Light.jpg" />
         <meta name="theme-color" content="#1173d4" />
+        
+        {/* Schema.org for Google */}
+        <script 
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "NewsMediaOrganization",
+              "name": "OnlyDans",
+              "url": "https://onlydans.com.br",
+              "logo": "https://onlydans.com.br/images/logos/OnlyDans-Logo-Design-3.jpg",
+              "description": "Portal de notícias que seleciona e resume as informações mais importantes do Brasil",
+              "sameAs": [],
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "BR"
+              }
+            })
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link 
