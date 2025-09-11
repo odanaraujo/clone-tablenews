@@ -29,8 +29,8 @@ const GNEWS_QUERIES = {
     params: 'category=science&lang=pt&country=br&nullable=image'
   },
   sports: {
-    endpoint: 'top-headlines',
-    params: 'category=sports&lang=pt&country=br&nullable=image'
+    endpoint: 'search',
+    params: 'q=futebol OR jogo OR resultado OR gol OR campeonato OR brasileirao OR copa&lang=pt&country=br&nullable=image&sortby=publishedAt'
   }
 };
 
@@ -45,7 +45,7 @@ const CACHE_DURATIONS = {
   business: 4 * 60 * 60 * 1000,  // 4 horas
   tech: 6 * 60 * 60 * 1000,      // 6 horas
   science: 8 * 60 * 60 * 1000,   // 8 horas (menos urgente)
-  sports: 3 * 60 * 60 * 1000     // 3 horas (resultados frequentes)
+  sports: 1 * 60 * 60 * 1000     // 1 hora (resultados frequentes)
 };
 
 // Contador de requests para monitorar uso da API
@@ -276,6 +276,12 @@ export default async function handler(req, res) {
   // Apenas GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método não permitido' });
+  }
+  
+  // Permitir limpar cache via query parameter
+  if (req.query.clearCache === 'true') {
+    newsCache = {};
+    console.log('Cache cleared manually');
   }
   
   try {

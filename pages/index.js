@@ -513,7 +513,7 @@ function Home() {
             {/* Footer */}
             <footer className="bg-background-light dark:bg-background-dark">
               <div className="mx-auto max-w-7xl border-t border-slate-200/80 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-800/80 dark:text-slate-400 sm:px-6 lg:px-8">
-                <p>© 2024 OnlyDans. All rights reserved.</p>
+                <p>© 2025 OnlyDans. All rights reserved.</p>
               </div>
             </footer>
           </div>
