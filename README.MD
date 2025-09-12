@@ -172,4 +172,4 @@ Este projeto está pronto para deploy no Vercel, Netlify ou qualquer plataforma 
 
 ---
 
-**© 2024 OnlyDans. MVP desenvolvido para validação rápida do produto.**
+**© 2025 OnlyDans. MVP desenvolvido para validação rápida do produto.**
